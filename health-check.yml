@@ -1,0 +1,73 @@
+---
+# =============================================================
+# health-check.yml — Check status of all nodes and containers
+# Usage: ansible-playbook playbooks/health-check.yml -i inventory/hosts.ini --ask-vault-pass
+# =============================================================
+
+- name: Cluster Health Check
+  hosts: homelab
+  gather_facts: true
+  tasks:
+
+    - name: Check system uptime
+      command: uptime
+      register: uptime_output
+      changed_when: false
+
+    - name: Print uptime
+      debug:
+        msg: "{{ inventory_hostname }} | {{ uptime_output.stdout }}"
+
+    - name: Check memory usage
+      shell: free -h | grep Mem
+      register: mem_output
+      changed_when: false
+
+    - name: Print memory
+      debug:
+        msg: "{{ inventory_hostname }} | RAM: {{ mem_output.stdout }}"
+
+    - name: Check disk usage (root)
+      shell: df -h / | tail -1
+      register: disk_output
+      changed_when: false
+
+    - name: Print disk usage
+      debug:
+        msg: "{{ inventory_hostname }} | Disk: {{ disk_output.stdout }}"
+
+    - name: Check running containers (Podman)
+      shell: podman ps --format "{{ '{{' }}.Names{{ '}}' }}" 2>/dev/null || echo "podman not available"
+      register: podman_output
+      changed_when: false
+      ignore_errors: true
+
+    - name: Check running containers (Docker)
+      shell: docker ps --format "{{ '{{' }}.Names{{ '}}' }}" 2>/dev/null || echo "docker not available"
+      register: docker_output
+      changed_when: false
+      ignore_errors: true
+
+    - name: Print containers
+      debug:
+        msg: "{{ inventory_hostname }} | Containers: {{ podman_output.stdout_lines + docker_output.stdout_lines }}"
+
+    - name: Check Tailscale status
+      command: tailscale status --json
+      register: tailscale_output
+      changed_when: false
+      ignore_errors: true
+
+    - name: Print Tailscale connectivity
+      debug:
+        msg: "{{ inventory_hostname }} | Tailscale: {{ 'connected' if tailscale_output.rc == 0 else 'ERROR' }}"
+
+    - name: Check load average
+      shell: cat /proc/loadavg | awk '{print $1, $2, $3}'
+      register: load_output
+      changed_when: false
+
+    - name: Alert if load is high
+      debug:
+        msg: "⚠️  HIGH LOAD on {{ inventory_hostname }}: {{ load_output.stdout }}"
+      when: load_output.stdout.split()[0] | float > 3.0

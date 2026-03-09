@@ -1,0 +1,64 @@
+# =========================
+# SECRETS — NEVER COMMIT
+# =========================
+.env
+.env.*
+!.env.example
+
+# Ansible sensitive files
+ansible/inventory/hosts.ini
+ansible/inventory/hosts.yml
+ansible/**/*.vault
+**/vault_pass
+.vault_pass
+*.vault_pass
+
+# SSH keys
+*.pem
+*.key
+id_rsa
+id_ed25519
+authorized_keys
+
+# API keys and tokens
+**/secrets/
+**/*secret*
+**/*token*
+**/*credentials*
+
+# =========================
+# PERSONAL INFO
+# =========================
+# Real hostnames, IPs, usernames must never appear
+# Use placeholders like NODE1_IP, YOUR_USERNAME
+
+# =========================
+# OS FILES
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+.Spotlight-V100
+.Trashes
+
+# =========================
+# EDITOR FILES
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# =========================
+# LOGS
+# =========================
+*.log
+logs/
+
+# =========================
+# TEMP FILES
+# =========================
+*.tmp
+*.bak
+*.backup
