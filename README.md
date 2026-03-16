@@ -9,7 +9,7 @@
 ```
                         INTERNET
                             │
-                  ┌─────────▼──────────┐
+                  ┌─────────▼───────────┐
                   │   Oracle Cloud VPS  │
                   │   (Node04)          │
                   │   Ubuntu 24.04      │
@@ -18,14 +18,14 @@
                   │   Public entry point│
                   │   AI workloads      │
                   │   LLM inference     │
-                  └─────────┬──────────┘
+                  └─────────┬───────────┘
                             │
                     Tailscale Mesh VPN
                     (Zero-trust, E2E encrypted)
                             │
           ┌─────────────────┼─────────────────┐
           │                 │                 │
-┌─────────▼──────┐ ┌────────▼───────┐ ┌──────▼─────────┐
+┌─────────▼───────┐ ┌───────▼────────┐ ┌──────▼─────────┐
 │    Node01       │ │    Node02      │ │    Node03      │
 │  Rocky Linux 10 │ │ Rocky Linux 10 │ │ Rocky Linux 10 │
 │  i3-7th 16GB    │ │  i3-7th 8GB    │ │  i3-7th 8GB    │
