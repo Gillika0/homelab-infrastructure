@@ -5,18 +5,18 @@ Personal mini-datacenter running 24/7 — 3 on-premise nodes + 1 cloud VPS, full
 ## 📐 Architecture Overview
 
 ```text
-                        INTERNET
-                            │
-                  ┌─────────▼───────────┐
-                  │   Oracle Cloud VPS  │
-                  │   (Node04)          │
-                  │   Ubuntu 24.04      │
-                  │   ARM A1 4vCPU 24GB │
-                  │                     │
-                  │   Public entry point│
+                         INTERNET
+                             │
+                  ┌──────────▼───────────┐
+                  │   Oracle Cloud VPS   │
+                  │   (Node04)           │
+                  │   Ubuntu 24.04       │
+                  │   ARM A1 4vCPU 24GB  │
+                  │                      │
+                  │   Public entry point │
                   │   Nginx Reverse Proxy│
-                  │   AI workloads      │
-                  └─────────┬───────────┘
+                  │   AI workloads       │
+                  └─────────┬────────────┘
                             │
                     Tailscale Mesh VPN
                     (Zero-trust, E2E encrypted)
