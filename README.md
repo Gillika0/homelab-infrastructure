@@ -1,12 +1,8 @@
-# 🏠 Homelab Infrastructure
+# 🏠 Homelab Infrastructure & Hybrid Cloud
+Personal mini-datacenter running 24/7 — 3 on-premise nodes + 1 cloud VPS, fully automated with Ansible, containerized with Podman/Docker, and connected via zero-trust VPN mesh.
 
-> Personal mini-datacenter running 24/7 — 3 on-premise nodes + 1 cloud VPS, fully automated with Ansible, containerized with Podman/Docker, and connected via zero-trust VPN mesh.
+## 📐 Architecture Overview
 
----
-
-## Architecture Overview
-
-```
                         INTERNET
                             │
                   ┌─────────▼───────────┐
@@ -16,8 +12,8 @@
                   │   ARM A1 4vCPU 24GB │
                   │                     │
                   │   Public entry point│
+                  │   Nginx Reverse Proxy
                   │   AI workloads      │
-                  │   LLM inference     │
                   └─────────┬───────────┘
                             │
                     Tailscale Mesh VPN
@@ -28,138 +24,127 @@
 ┌─────────▼───────┐ ┌───────▼────────┐ ┌──────▼─────────┐
 │    Node01       │ │    Node02      │ │    Node03      │
 │  Rocky Linux 10 │ │ Rocky Linux 10 │ │ Rocky Linux 10 │
-│  i3-7th 16GB    │ │  i3-7th 8GB    │ │  i3-7th 8GB    │
+│  i3-7th 16GB    │ │  i3-7th 16GB   │ │  i3-7th 16GB   │
 │                 │ │                │ │                │
 │  Orchestration  │ │  Photo storage │ │  Media server  │
-│  AI/LLM proxy   │ │  Self-hosted   │ │  Streaming     │
-│  Automation     │ │  cloud storage │ │                │
+│  Observability  │ │  Self-hosted   │ │  Streaming     │
+│  AI/LLM proxy   │ │  cloud storage │ │  DNS (Pi-hole) │
 └─────────────────┘ └────────────────┘ └────────────────┘
-```
 
----
-
-## Node Details
+## 🖥️ Node Details
 
 ### Node04 — Oracle Cloud VPS ☁️
 | Spec | Value |
-|---|---|
-| CPU | ARM Ampere A1 — 4 vCPU |
-| RAM | 24 GB |
-| Storage | 200 GB SSD |
-| OS | Ubuntu 24.04 LTS |
-| Role | Public entry point, AI inference, custom bots |
+| :--- | :--- |
+| **CPU** | ARM Ampere A1 — 4 vCPU |
+| **RAM** | 24 GB |
+| **Storage** | 200 GB SSD |
+| **OS** | Ubuntu 24.04 LTS |
+| **Role** | Public entry point, Reverse Proxy, AI inference |
 
 **Running services:**
-- `ollama` — Local LLM inference (systemd service)
-- `glances` — System monitoring
-- Custom Telegram bots
+* `nginx` — Reverse proxy with automated Let's Encrypt SSL.
+* `ollama` — Local LLM inference (systemd service).
+* `glances` — System monitoring.
+* Custom Telegram bots.
 
----
-
-### Node01 — Orchestration Hub 🧠
+### Node01 — Orchestration & Observability Hub 🧠
 | Spec | Value |
-|---|---|
-| CPU | Intel i3 7th Gen — 4 threads |
-| RAM | 16 GB |
-| Storage | NVMe 238GB + 1TB USB |
-| OS | Rocky Linux 10.1 (kernel 6.12) |
-| Role | Central orchestration, AI proxy, home automation |
+| :--- | :--- |
+| **CPU** | Intel i3 7th Gen — 4 threads |
+| **RAM** | 16 GB |
+| **Storage** | NVMe 238GB + 1TB USB (ZFS formatted) |
+| **OS** | Rocky Linux 10.1 (kernel 6.12) |
+| **Role** | Central orchestration, AI proxy, home automation, monitoring |
 
 **Running services:**
-- `portainer` — Container management UI
-- `litellm` — Multi-model LLM proxy (Groq, Gemini, OpenRouter)
-- `homeassistant` — Home automation
-- `n8n` — Workflow automation
-- `glances` — System monitoring
-
----
+* `portainer` — Container management UI.
+* `litellm` — Multi-model LLM proxy (Groq, Gemini, OpenRouter).
+* `homeassistant` — Home automation.
+* `n8n` — Workflow automation.
+* `prometheus` & `loki` & `grafana` — Centralized observability stack with Telegram alerting.
 
 ### Node02 — Storage Node 📦
 | Spec | Value |
-|---|---|
-| CPU | Intel i3 7th Gen — 4 threads |
-| RAM | 8 GB |
-| Storage | NVMe 238GB + 1TB USB |
-| OS | Rocky Linux 10.1 (kernel 6.12) |
-| Role | Self-hosted photo/video cloud storage |
+| :--- | :--- |
+| **CPU** | Intel i3 7th Gen — 4 threads |
+| **RAM** | 16 GB |
+| **Storage** | NVMe 238GB + 1TB USB (ZFS formatted) |
+| **OS** | Rocky Linux 10.1 (kernel 6.12) |
+| **Role** | Self-hosted photo/video cloud storage |
 
 **Running services:**
-- `immich` — Self-hosted Google Photos alternative (server + ML + Redis + PostgreSQL)
-- `dashy` — Homepage dashboard
-- `portainer-agent` — Remote container management
+* `immich` — Self-hosted Google Photos alternative (server + ML + Redis + PostgreSQL).
+* `dashy` — Homepage dashboard.
+* `samba` — Local LAN file sharing.
 
----
-
-### Node03 — Media Server 🎬
+### Node03 — Media & Network Services 🎬
 | Spec | Value |
-|---|---|
-| CPU | Intel i3 7th Gen — 4 threads |
-| RAM | 8 GB |
-| Storage | NVMe 238GB + 2x 1TB USB |
-| OS | Rocky Linux 10.1 (kernel 6.12) |
-| Role | Media streaming |
+| :--- | :--- |
+| **CPU** | Intel i3 7th Gen — 4 threads |
+| **RAM** | 16 GB |
+| **Storage** | NVMe 238GB + 2x 1TB USB (ZFS formatted) |
+| **OS** | Rocky Linux 10.1 (kernel 6.12) |
+| **Role** | Media streaming, Network DNS |
 
 **Running services:**
-- `jellyfin` — Self-hosted media server
-- `glances` — System monitoring
+* `jellyfin` — Self-hosted media server.
+* `pi-hole` — Network-wide ad blocking and local DNS (with automated systemd restart policy).
 
----
+## 🛠️ Tech Stack
 
-## Tech Stack
-
-### Infrastructure & Automation
+### Infrastructure & Orchestration
 | Tool | Purpose |
-|---|---|
-| **Ansible** | Configuration management, cluster automation |
-| **Podman** | Rootless container runtime (on-premise nodes) |
-| **Docker** | Container runtime (Oracle VPS) |
-| **Tailscale** | Zero-trust mesh VPN across all nodes |
+| :--- | :--- |
+| **Ansible** | Configuration management, cluster automation (Static inventory, managed via WSL). |
+| **Podman** | Rootless container runtime managed by `systemd` (on-premise nodes). |
+| **Docker** | Container runtime (Oracle VPS). |
+| **ZFS** | Advanced file system ensuring data integrity on local drives. |
+
+### Networking & Security
+| Tool | Purpose |
+| :--- | :--- |
+| **Tailscale** | Zero-trust mesh VPN across all nodes for secure SSH and inter-node communication. |
+| **Nginx & Let's Encrypt** | Reverse proxy handling public ingress with automatic SSL provisioning. |
+| **Pi-hole** | Local DNS and ad-blocking with high availability auto-restart. |
 
 ### AI / LLM Stack
 | Tool | Purpose |
-|---|---|
-| **LiteLLM** | Unified proxy for multiple LLM providers |
-| **Ollama** | Local LLM inference on Oracle ARM |
-| **n8n** | AI workflow automation |
-| **Groq API** | Fast LLM inference (Llama models) |
-| **Gemini API** | Google AI models |
-| **OpenRouter** | Multi-provider LLM routing |
+| :--- | :--- |
+| **LiteLLM** | Unified proxy for multiple LLM providers. |
+| **Ollama** | Local LLM inference on Oracle ARM. |
+| **n8n** | AI workflow automation. |
+| **Groq / Gemini / OpenRouter API** | Cloud AI inference routing. |
 
-### Monitoring
+### Monitoring & Backup
 | Tool | Purpose |
-|---|---|
-| **Glances** | Per-node real-time system monitoring |
-| **PCP (pmcd/pmlogger)** | Performance Co-Pilot on Rocky Linux nodes |
+| :--- | :--- |
+| **Grafana / Prometheus / Loki** | Centralized observability stack with Telegram alert integration. |
+| **Rsync & Cron** | Automated daily backups of critical configs (e.g., Home Assistant) with a strict 7-day retention policy. |
 
----
+## 🌐 Network Design
 
-## Network Design
+**Physical Layer:**
+All three local Lenovo nodes are connected to a **dedicated physical switch** to isolate high-throughput inter-node traffic (Samba file sharing, backups) and prevent bottlenecking the main home router.
 
-```
-Home Network (LAN)
-├── Node01  192.168.x.x
-├── Node02  192.168.x.x
-└── Node03  192.168.x.x
+**Home Network (LAN):**
+├── Node01 192.168.x.x
+├── Node02 192.168.x.x
+└── Node03 192.168.x.x
 
-Tailscale Overlay Network (100.x.x.x range)
-├── Node01  100.x.x.x
-├── Node02  100.x.x.x
-├── Node03  100.x.x.x
-├── Node04  100.x.x.x (Oracle)
+**Tailscale Overlay Network (100.x.x.x range):**
+├── Node01 100.x.x.x
+├── Node02 100.x.x.x
+├── Node03 100.x.x.x
+├── Node04 100.x.x.x (Oracle)
 └── Personal devices (laptop, phone, tablet)
 
-Security model:
-- On-premise nodes: NOT exposed to internet
-- All external access: via Tailscale only
-- Oracle VPS: only public-facing node
-```
+**Security model:**
+- **Zero-Trust:** On-premise nodes are NOT exposed to the internet. Zero open ports on the local router.
+- **Ingress:** Oracle VPS is the ONLY public-facing node.
+- **Access Control:** Tailscale ACLs are strictly configured to manage SSH access.
 
----
-
-## Repository Structure
-
-```
-homelab-infrastructure/
+## 📂 Repository Structurehomelab-infrastructure/
 │
 ├── ansible/
 │   ├── inventory/
@@ -174,59 +159,48 @@ homelab-infrastructure/
 │       └── tailscale/            # Tailscale installation
 │
 ├── containers/
-│   ├── node01/                   # LiteLLM, n8n, HA compose files
+│   ├── node01/                   # LiteLLM, n8n, HA, Monitoring stack
 │   ├── node02/                   # Immich stack
-│   ├── node03/                   # Jellyfin
-│   └── node04/                   # Oracle VPS services
+│   ├── node03/                   # Jellyfin, Pi-hole
+│   └── node04/                   # Oracle VPS services, Nginx
 │
 ├── docs/
 │   └── architecture/             # Diagrams and design decisions
 │
 ├── scripts/
-│   ├── backup.sh                 # Automated backup via Tailscale
+│   ├── backup.sh                 # Automated 7-day retention Rsync via cron
 │   └── health-check.sh           # Cluster health check
 │
 ├── .env.example                  # Template for environment variables
 ├── .gitignore                    # Excludes .env, inventory, secrets
 └── README.md
-```
+🔒 Security Practices
+No secrets in repository: All credentials via environment variables.
 
----
+Ansible Vault: Encrypted inventory and sensitive variables.
 
-## Security Practices
+Rootless Podman: Containers run without root privileges on-premise, managed via systemd.
 
-- **No secrets in repository** — all credentials via environment variables
-- **Ansible Vault** — encrypted inventory and sensitive variables
-- **Rootless Podman** — containers run without root privileges on-premise
-- **Firewalld** — active on all Rocky Linux nodes
-- **Zero open ports** — on-premise nodes accessible only via Tailscale
-- **git-secrets** — pre-commit hook to prevent accidental credential leaks
+Firewalld: Active on all Rocky Linux nodes, strictly configured.
 
----
+git-secrets: Pre-commit hook to prevent accidental credential leaks.
 
-## Skills Demonstrated
+🎯 Skills Demonstrated
+Linux Administration Rocky Linux / RHEL Systemd Container Orchestration Ansible IaC Podman Docker Networking Tailscale Zero-Trust ZFS AI/LLM Integration Automation Observability Disaster Recovery
 
-`Linux Administration` `Rocky Linux / RHEL` `Container Orchestration` `Ansible` `Podman` `Docker` `Networking` `Tailscale / WireGuard` `AI/LLM Integration` `LiteLLM` `n8n Automation` `Self-hosted Infrastructure` `Oracle Cloud` `System Monitoring` `Backup Strategies`
+🎓 Background
+Electronic & Communication Engineering graduate (Politecnico di Torino).
+Currently pursuing an MSc in Communication Engineering at PoliTo / KIT Karlsruhe.
 
----
+Building this homelab to gain hands-on System Engineering, DevOps, and modern Infrastructure-as-Code experience to bridge the gap between telecommunications theory and applied cloud infrastructures.
 
-## Background
+🚀 What's Next
+Gitea + Woodpecker CI — Self-hosted Git and CI/CD pipeline.
 
-Electronic & Communication Engineering graduate (Politecnico di Torino).  
-Currently pursuing MSc in Communication Engineering at PolTo / KIT Karlsruhe.  
-Building this homelab to gain hands-on sysadmin and DevOps experience.
+Headscale — Self-hosted Tailscale coordination server.
 
----
+k3s — Kubernetes learning cluster migration.
 
-## What's Next
+RHCSA certification preparation.
 
-- [ ] Grafana + Prometheus + Loki — centralized monitoring stack
-- [ ] Traefik — reverse proxy with automatic SSL on Oracle VPS
-- [ ] Gitea + Woodpecker CI — self-hosted Git and CI/CD pipeline
-- [ ] Headscale — self-hosted Tailscale coordination server
-- [ ] k3s — Kubernetes learning cluster
-- [ ] RHCSA certification preparation
-
----
-
-*All IP addresses, hostnames, and credentials have been removed from this repository. See `.env.example` and `hosts.example.ini` for configuration templates.*
+Note: All IP addresses, hostnames, and credentials have been removed from this repository. See .env.example and hosts.example.ini for configuration templates.
